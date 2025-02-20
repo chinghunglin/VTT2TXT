@@ -183,7 +183,7 @@ namespace VTT2TXT
                 var files = Directory.GetFiles(tgt_path)
                     .Where(file => extensions.Contains(Path.GetExtension(file).ToLower()));
 
-                if (orderByName.Checked)
+                if (orderByCreateTm.Checked)
                 {
                     files = files.OrderByDescending(file => File.GetCreationTime(file));
                 }
