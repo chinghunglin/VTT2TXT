@@ -112,7 +112,7 @@ namespace VTT2TXT
             return true;
         }
 
-        public static void ProcessSubtitleFile(string filePath)
+        public static void ProcessSubtitleFile(string filePath, double secToNewBlock=3.5, int maxSentencesOfABlock=15)
         {
             if (!FileIsValid(filePath))
             {
@@ -121,27 +121,76 @@ namespace VTT2TXT
 
             try
             {
-                string[] lines = File.ReadAllLines(filePath);
+                // string[] lines = File.ReadAllLines(filePath);
+                var lines = File.ReadAllLines(filePath).ToList();
                 var outputLines = new List<string>();
                 string lastLine = string.Empty;
                 String thisLine = string.Empty;
 
-                foreach (string line in lines)
+                var tempLines = new List<string>();
+                DateTime? lastTimestamp = null;
+                int count = 0;
+
+                //foreach (string line in lines)
+                //{
+                //    // Skip empty lines, time lines, and number lines
+                //    if (IsEmptyOrTimeOrNumberLine(line))
+                //    {
+                //        continue;
+                //    }
+
+                //    thisLine  = EnsureEndsWithFullWidthComma(RemoveTagsAndTimestamps(line));
+
+                //    if (thisLine == lastLine) {
+                //        continue;
+                //    }
+
+                //    outputLines.Add(thisLine);
+                //    lastLine = thisLine;
+                //}
+
+                // 移除 VTT 檔案前 3 行標頭（如果存在）
+                ProcessFirst3HeaderLines(lines);
+
+                foreach (var line in lines)
                 {
-                    // Skip empty lines, time lines, and number lines
-                    if (IsEmptyOrTimeOrNumberLine(line))
+                    if (IsTimestamp(line, out DateTime currentTimestamp))
                     {
-                        continue;
+                        if (lastTimestamp.HasValue && (currentTimestamp - lastTimestamp.Value).TotalSeconds > secToNewBlock)
+                        {
+                            outputLines.Add(string.Join("", tempLines));
+                            outputLines.Add(" ");
+                            tempLines.Clear();
+                            count = 0;
+                        }
+                        else if (count >= maxSentencesOfABlock)
+                        {
+                            outputLines.Add(string.Join("", tempLines));
+                            outputLines.Add(" ");
+                            tempLines.Clear();
+                            count = 0;
+                        }
+                        lastTimestamp = currentTimestamp;
                     }
+                    else if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        // tempLines.Add(line);
+                        thisLine = EnsureEndsWithFullWidthComma(RemoveTagsAndTimestamps(line));
 
-                    thisLine  = EnsureEndsWithFullWidthComma(RemoveTagsAndTimestamps(line));
-
-                    if (thisLine == lastLine) {
-                        continue;
+                        if (thisLine == lastLine)
+                        {
+                            continue;
+                        }
+                        
+                        tempLines.Add(thisLine);
+                        lastLine = thisLine;
+                        count++;
                     }
+                }
 
-                    outputLines.Add(thisLine);
-                    lastLine = thisLine;
+                if (tempLines.Count > 0)
+                {
+                    outputLines.Add(string.Join("", tempLines));
                 }
 
                 // Write the processed lines to a new .txt file
@@ -152,6 +201,25 @@ namespace VTT2TXT
             {
                 MessageBox.Show($"An error occurred: {ex.Message}");
             }
+        }
+
+        private static void ProcessFirst3HeaderLines(List<string> lines)
+        {
+            if (lines.Count >= 3 && lines[0] == "WEBVTT" && lines[1].StartsWith("Kind:") && lines[2].StartsWith("Language:"))
+            {
+                lines.RemoveRange(0, 3);
+            }
+        }
+
+        private static bool IsTimestamp(string line, out DateTime timestamp)
+        {
+            timestamp = DateTime.MinValue;
+            var match = Regex.Match(line, @"(\d{2}:\d{2}:\d{2},\d{3})|(\d{2}:\d{2}:\d{2}\.\d{3})");
+            if (match.Success)
+            {
+                return DateTime.TryParseExact(match.Value, new[] { "HH:mm:ss,fff", "HH:mm:ss.fff" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+            }
+            return false;
         }
 
         private void Btn_SetPath_Click(object sender, EventArgs e)
