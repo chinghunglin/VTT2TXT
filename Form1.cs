@@ -73,6 +73,19 @@ namespace VTT2TXT
             return false;
         }
 
+        static private bool IsNumberLine(String input)
+        {
+            // Regex to match lines to remove
+            var numberPattern = new Regex(@"^\d+$");
+
+            if (numberPattern.IsMatch(input))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         static private string RemoveTagsAndTimestamps(string input)
         {
             if (string.IsNullOrEmpty(input))
@@ -112,7 +125,7 @@ namespace VTT2TXT
             return true;
         }
 
-        public static void ProcessSubtitleFile(string filePath, double secToNewBlock=3.5, int maxSentencesOfABlock=15)
+        public static void ProcessSubtitleFile(string filePath, int maxSentencesOfABlock=15)
         {
             if (!FileIsValid(filePath))
             {
@@ -156,21 +169,19 @@ namespace VTT2TXT
                 {
                     if (IsTimestamp(line, out DateTime currentTimestamp))
                     {
-                        if (lastTimestamp.HasValue && (currentTimestamp - lastTimestamp.Value).TotalSeconds > secToNewBlock)
+                        if (isTimeDiffOverLimit(currentTimestamp, lastTimestamp) || (count >= maxSentencesOfABlock))
                         {
                             outputLines.Add(string.Join("", tempLines));
                             outputLines.Add(" ");
                             tempLines.Clear();
                             count = 0;
                         }
-                        else if (count >= maxSentencesOfABlock)
-                        {
-                            outputLines.Add(string.Join("", tempLines));
-                            outputLines.Add(" ");
-                            tempLines.Clear();
-                            count = 0;
-                        }
+
                         lastTimestamp = currentTimestamp;
+                    }
+                    else if (IsNumberLine(line))
+                    {
+                        continue;
                     }
                     else if (!string.IsNullOrWhiteSpace(line))
                     {
@@ -181,7 +192,7 @@ namespace VTT2TXT
                         {
                             continue;
                         }
-                        
+
                         tempLines.Add(thisLine);
                         lastLine = thisLine;
                         count++;
@@ -201,6 +212,12 @@ namespace VTT2TXT
             {
                 MessageBox.Show($"An error occurred: {ex.Message}");
             }
+        }
+
+        // currentTimestamp - lastTimestamp.Value).TotalSeconds > secToNewBlock
+        private static bool isTimeDiffOverLimit(DateTime currentTimestamp, DateTime? lastTimestamp, double secToNewBlock = 3.5)
+        {
+            return lastTimestamp.HasValue && (currentTimestamp - lastTimestamp.Value).TotalSeconds > secToNewBlock;
         }
 
         private static void ProcessFirst3HeaderLines(List<string> lines)
