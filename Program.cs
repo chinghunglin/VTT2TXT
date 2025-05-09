@@ -1,8 +1,18 @@
 
+using System.Runtime.CompilerServices;
+
 namespace VTT2TXT
 {
+    enum DisplayMode
+    {
+        Console,
+        GUI
+    }
+
     internal static class Program
     {
+        private static DisplayMode mode = DisplayMode.Console;
+
         /// <summary>
         ///  The main entry point for the application.
         /// </summary>
@@ -11,12 +21,14 @@ namespace VTT2TXT
         {
             if (args.Length > 0)
             {
-                // 文字介面的排程模式
-                RunScheduledTask();
+                // 呼叫轉換程式
+                mode = DisplayMode.Console;
+                RunScheduledTask(args[0]);
             }
             else
             {
                 // GUI 模式
+                mode = DisplayMode.GUI;
                 ApplicationConfiguration.Initialize();
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
@@ -24,9 +36,10 @@ namespace VTT2TXT
             }
         }
 
-        private static void RunScheduledTask()
+        private static void RunScheduledTask(string filepath)
         {
-            Console.WriteLine("Hello, world!");
+            // 使用類型名稱來呼叫靜態方法
+            Vtt2TxtConverter.ProcessSubtitleFile(filepath);
         }
     }
 }
