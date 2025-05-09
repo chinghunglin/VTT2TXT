@@ -3,11 +3,11 @@ using System.Text.RegularExpressions;
 
 namespace VTT2TXT
 {
-    public partial class Form1 : Form
+    public partial class MainForm : Form
     {
         string[] extensions = { ".vtt", ".srt" };
 
-        public Form1()
+        public MainForm()
         {
             InitializeComponent();
             InitializeUI();
@@ -52,25 +52,6 @@ namespace VTT2TXT
 
             // 若未以全形中文逗號結尾，則加上並回傳
             return input + "，";
-        }
-
-        /// <summary>
-        /// check if input line is empty line or time line or number line
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        static private bool IsEmptyOrTimeOrNumberLine(String input)
-        {
-            // Regex to match lines to remove
-            var timePattern = new Regex(@"^\d{2}:\d{2}:\d{2}[.,]\d{3} --> \d{2}:\d{2}:\d{2}[.,]\d{3}");
-            var numberPattern = new Regex(@"^\d+$");
-            
-            if (string.IsNullOrWhiteSpace(input) || timePattern.IsMatch(input) || numberPattern.IsMatch(input))
-            { 
-                return true; 
-            }
-
-            return false;
         }
 
         static private bool IsNumberLine(String input)
@@ -134,7 +115,6 @@ namespace VTT2TXT
 
             try
             {
-                // string[] lines = File.ReadAllLines(filePath);
                 var lines = File.ReadAllLines(filePath).ToList();
                 var outputLines = new List<string>();
                 string lastLine = string.Empty;
@@ -143,24 +123,6 @@ namespace VTT2TXT
                 var tempLines = new List<string>();
                 DateTime? lastTimestamp = null;
                 int count = 0;
-
-                //foreach (string line in lines)
-                //{
-                //    // Skip empty lines, time lines, and number lines
-                //    if (IsEmptyOrTimeOrNumberLine(line))
-                //    {
-                //        continue;
-                //    }
-
-                //    thisLine  = EnsureEndsWithFullWidthComma(RemoveTagsAndTimestamps(line));
-
-                //    if (thisLine == lastLine) {
-                //        continue;
-                //    }
-
-                //    outputLines.Add(thisLine);
-                //    lastLine = thisLine;
-                //}
 
                 // 移除 VTT 檔案前 3 行標頭（如果存在）
                 ProcessFirst3HeaderLines(lines);

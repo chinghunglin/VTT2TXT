@@ -1,3 +1,4 @@
+
 namespace VTT2TXT
 {
     internal static class Program
@@ -6,12 +7,26 @@ namespace VTT2TXT
         ///  The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
-            ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
+            if (args.Length > 0)
+            {
+                // 文字介面的排程模式
+                RunScheduledTask();
+            }
+            else
+            {
+                // GUI 模式
+                ApplicationConfiguration.Initialize();
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new MainForm());
+            }
+        }
+
+        private static void RunScheduledTask()
+        {
+            Console.WriteLine("Hello, world!");
         }
     }
 }
